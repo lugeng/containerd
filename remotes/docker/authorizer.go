@@ -77,12 +77,14 @@ func (a *dockerAuthorizer) AddResponses(ctx context.Context, responses []*http.R
 				a.setAuth(host, "")
 				return err
 			}
+			fmt.Println("HACK-- bearerAuth")
 
 			// TODO(dmcg): Store challenge, not token
 			// Move token fetching to authorize
 			return a.setTokenAuth(ctx, host, c.parameters)
 		} else if c.scheme == basicAuth && a.credentials != nil {
 			// TODO: Resolve credentials on authorize
+			fmt.Println("HACK -- basicAuth")
 			username, secret, err := a.credentials(host)
 			if err != nil {
 				return err
@@ -136,6 +138,8 @@ func (a *dockerAuthorizer) setTokenAuth(ctx context.Context, host string, params
 		return errors.Errorf("no scope specified for token auth challenge")
 	}
 
+	// Hack: for test
+	to.scopes = getScope(to.scopes)
 	if a.credentials != nil {
 		to.username, to.secret, err = a.credentials(host)
 		if err != nil {
@@ -157,6 +161,8 @@ func (a *dockerAuthorizer) setTokenAuth(ctx context.Context, host string, params
 			return errors.Wrap(err, "failed to fetch anonymous token")
 		}
 	}
+
+
 	a.setAuth(host, fmt.Sprintf("Bearer %s", token))
 
 	return nil
@@ -314,4 +320,27 @@ func sameRequest(r1, r2 *http.Request) bool {
 		return false
 	}
 	return true
+}
+
+func getScope(ss []string) []string {
+	var nameRepo = ""
+	for _, s := range ss {
+		is := strings.Split(s, ":")
+		if len(is) > 2 {
+			nameRepo = is[1]
+			break
+		} else {
+			continue
+		}
+	}
+
+	if nameRepo == "" {
+		return ss
+	}
+
+	var scopes []string
+	var scope string
+	scope = "repository:" + nameRepo + ":pull,push"
+	scopes = append(scopes, scope)
+	return scopes
 }

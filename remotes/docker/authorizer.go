@@ -77,14 +77,12 @@ func (a *dockerAuthorizer) AddResponses(ctx context.Context, responses []*http.R
 				a.setAuth(host, "")
 				return err
 			}
-			fmt.Println("HACK-- bearerAuth")
 
 			// TODO(dmcg): Store challenge, not token
 			// Move token fetching to authorize
 			return a.setTokenAuth(ctx, host, c.parameters)
 		} else if c.scheme == basicAuth && a.credentials != nil {
 			// TODO: Resolve credentials on authorize
-			fmt.Println("HACK -- basicAuth")
 			username, secret, err := a.credentials(host)
 			if err != nil {
 				return err
